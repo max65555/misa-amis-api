@@ -1,0 +1,12 @@
+D:\MISA_INCLASS\CSharp\misa-amis-api\MISA.AMIS.Common\bin\Debug\net6.0\MISA.AMIS.Common.deps.json
+D:\MISA_INCLASS\CSharp\misa-amis-api\MISA.AMIS.Common\bin\Debug\net6.0\MISA.AMIS.Common.dll
+D:\MISA_INCLASS\CSharp\misa-amis-api\MISA.AMIS.Common\bin\Debug\net6.0\MISA.AMIS.Common.pdb
+D:\MISA_INCLASS\CSharp\misa-amis-api\MISA.AMIS.Common\obj\Debug\net6.0\MISA.AMIS.Common.csproj.AssemblyReference.cache
+D:\MISA_INCLASS\CSharp\misa-amis-api\MISA.AMIS.Common\obj\Debug\net6.0\MISA.AMIS.Common.GeneratedMSBuildEditorConfig.editorconfig
+D:\MISA_INCLASS\CSharp\misa-amis-api\MISA.AMIS.Common\obj\Debug\net6.0\MISA.AMIS.Common.AssemblyInfoInputs.cache
+D:\MISA_INCLASS\CSharp\misa-amis-api\MISA.AMIS.Common\obj\Debug\net6.0\MISA.AMIS.Common.AssemblyInfo.cs
+D:\MISA_INCLASS\CSharp\misa-amis-api\MISA.AMIS.Common\obj\Debug\net6.0\MISA.AMIS.Common.csproj.CoreCompileInputs.cache
+D:\MISA_INCLASS\CSharp\misa-amis-api\MISA.AMIS.Common\obj\Debug\net6.0\MISA.AMIS.Common.dll
+D:\MISA_INCLASS\CSharp\misa-amis-api\MISA.AMIS.Common\obj\Debug\net6.0\refint\MISA.AMIS.Common.dll
+D:\MISA_INCLASS\CSharp\misa-amis-api\MISA.AMIS.Common\obj\Debug\net6.0\MISA.AMIS.Common.pdb
+D:\MISA_INCLASS\CSharp\misa-amis-api\MISA.AMIS.Common\obj\Debug\net6.0\ref\MISA.AMIS.Common.dll
