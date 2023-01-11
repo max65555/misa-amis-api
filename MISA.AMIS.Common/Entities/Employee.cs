@@ -2,33 +2,34 @@
 
 namespace MISA.AMIS.Common.Entities
 {
-    public class Employee
+    public class Employee : BaseEntity
     {
         /// <summary>
         /// ID nhân viên
         /// </summary>
 
-        [Required]
+        [Required(ErrorMessage = "Xảy ra lỗi khi sinh dữ liệu ID Nhân Viên")]
         public Guid EmployeeID { get; set; }
         /// <summary>
         /// Mã nhân viên
         /// </summary>
 
-        [Required]
+        [Required(ErrorMessage="Mã Nhân Viên Không được để trống")]        
         public string EmployeeCode { get; set; }
         /// <summary>
         /// Tên nhân viên
         /// </summary>
+        [Required(ErrorMessage="Tên Nhân Viên Không được để trống")]
         public string? EmployeeName { get; set; }
         /// <summary>
         /// mã phòng ban
         /// </summary>
-        [Required]
-        public Guid DepartmentID { get; set; }
+        [Required(ErrorMessage = "Mã Phòng ban Không được để trống")]
+        public Guid? DepartmentID { get; set; }
         /// <summary>
         /// mã công việc
         /// </summary>
-        public Guid? JobPositionID { get; set; }
+        public string? JobPositionID { get; set; }  
         /// <summary>
         /// Ngày sinh
         /// </summary>
@@ -82,18 +83,18 @@ namespace MISA.AMIS.Common.Entities
         /// <summary>
         /// Ngày tạo
         /// </summary>
-        public string? CreatedDate { get; set; }
-        /// <summary>
-        /// Người tạo
-        /// </summary>
-        public string? CreatedBy { get; set; }
-        /// <summary>
-        /// Ngày sửa
-        /// </summary>
-        public string? UpdatedDate { get; set; }
-        /// <summary>
-        /// Người sửa
-        /// </summary>
-        public string? UpdatedBy { get; set; }
+        //public string? CreatedDate { get; set; }
+        ///// <summary>
+        ///// Người tạo
+        ///// </summary>
+        //public string? CreatedBy { get; set; }
+        ///// <summary>
+        ///// Ngày sửa
+        ///// </summary>
+        //public string? UpdatedDate { get; set; }
+        ///// <summary>
+        ///// Người sửa
+        ///// </summary>
+        //public string? UpdatedBy { get; set; }
     }
 }

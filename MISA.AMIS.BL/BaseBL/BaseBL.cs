@@ -1,7 +1,11 @@
-﻿using MISA.AMIS.DL;
+﻿using Dapper;
+using MISA.AMIS.Common;
+using MISA.AMIS.DL;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -33,8 +37,13 @@ namespace MISA.AMIS.BL
         /// </summary>
         /// <param name="record">record is going to be inserted into database</param>
         /// <returns>recordID's of added record</returns>
-        public Guid? InsertRecord(T record)
+        public object? InsertRecord(T record)
         {
+            var result = Validate(record);
+            if (result != null)
+            {
+                return result;
+            }
             return _baseDL.InsertRecord(record);
         }
 
@@ -44,11 +53,15 @@ namespace MISA.AMIS.BL
         /// </summary>
         /// <param name="record">record is going to be updated into database</param>
         /// <returns>recordID's of changed record</returns>
-        public Guid? UpdateRecord(Guid recordID, T record)
+        public object? UpdateRecord(Guid recordID, T record)
         {
-           return _baseDL.UpdateRecord(recordID, record);  
+            var result = Validate(record);
+            if (result != null)
+            {
+                return result;
+            }
+            return _baseDL.UpdateRecord(recordID, record);  
         }
-
         /// <summary>
         /// delete a record into database
         /// Author: toanlk (9/1/2023)
@@ -80,6 +93,44 @@ namespace MISA.AMIS.BL
             return _baseDL.ReadFilteredRecords(keyword, sort, limit, offset);
         }
 
+        /// <summary>
+        /// get record by its id
+        /// Author: toanlk (9/1/2022)
+        /// </summary>
+        /// <param name="recordID"></param>
+        /// <returns>instance of T object</returns>
+        public T? ReadByID(Guid recordID)
+        {
+            return _baseDL.ReadByID(recordID);
+        }
+
+        /// <summary>
+        /// validate a record instance 
+        /// </summary>
+        /// <param name="record"></param>
+        /// <returns></returns>
+        public object? Validate(T record) {
+            PropertyInfo[] properties = typeof(T).GetProperties();
+            List<object> errorMessages = new List<object>();
+            foreach (PropertyInfo property in properties)
+            {
+                RequiredAttribute? requireAttribute = (RequiredAttribute?)property.GetCustomAttribute(typeof(RequiredAttribute), false);
+                if (requireAttribute != null && string.IsNullOrEmpty(property.GetValue(record)?.ToString()))
+                {
+                    errorMessages.Add(new
+                        {
+                            ErrorMessage = requireAttribute.ErrorMessage,
+                            ErrorField = property.Name
+                        }
+                    );
+                }
+            }
+            if (errorMessages.Count > 0)
+            {
+                return errorMessages;
+            }
+            return null;
+        }
         #endregion
     }
 }

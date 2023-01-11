@@ -16,11 +16,16 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddScoped<IEmployeeDL, EmployeeDL>();
-builder.Services.AddScoped(typeof(IBaseDL<>),typeof(BaseDL<>));
-builder.Services.AddScoped<IEmployeeBL, EmployeeBL>();
-builder.Services.AddScoped(typeof(IBaseBL<>), typeof(BaseBL<>));
 
+builder.Services.AddScoped(typeof(IBaseDL<>),typeof(BaseDL<>));
+builder.Services.AddScoped(typeof(IBaseBL<>), typeof(BaseBL<>));
+builder.Services.AddScoped<IEmployeeDL, EmployeeDL>();
+builder.Services.AddScoped<IEmployeeBL, EmployeeBL>();
+builder.Services.AddScoped<IDepartmentDL, DepartmentDL>();
+builder.Services.AddScoped<IDepartmentBL, DepartmentBL>();
+
+
+ConnectionString.MYSQL_CONNECTION_STRING =  builder.Configuration.GetConnectionString("mysql");
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

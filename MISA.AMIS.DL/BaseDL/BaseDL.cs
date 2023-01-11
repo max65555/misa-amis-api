@@ -3,10 +3,14 @@ using Microsoft.AspNetCore.Mvc;
 using MySqlConnector;
 using System.Data;
 using Microsoft.AspNetCore.Http;
-using MISA.AMIS.Common.Entities;
+using MISA.AMIS.Common;
 using System.Security.Cryptography;
 using System.Reflection;
 using System.Linq;
+using System.Security.AccessControl;
+using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.Reflection.Metadata.Ecma335;
 
 namespace MISA.AMIS.DL
 {
@@ -19,18 +23,17 @@ namespace MISA.AMIS.DL
         /// </summary>
         /// <param name="record">record is going to be inserted into database</param>
         /// <returns>recordID's of added record</returns>
-        public Guid? InsertRecord(T record)
+        public object? InsertRecord(T record)
         {
             try
             {
                 PropertyInfo[] properties = typeof(T).GetProperties();
                 var ObjectName = typeof(T).Name;
                 //chuẩn bị tên store procedure
-                string storedProcedure = $"Proc_{ObjectName}_Insert";
+                string storedProcedure = String.Format(StoreProcedureName.PROCEDURE_NAME_INSERT, ObjectName);
 
                 //chẩn bị tham số đầu vào
                 var parammeters = new DynamicParameters();
-
                 var recordID = Guid.NewGuid();
                 foreach (PropertyInfo property in properties)
                 {
@@ -43,11 +46,11 @@ namespace MISA.AMIS.DL
                         parammeters.Add($"@{property.Name}", property.GetValue(record, null));
                     }
                 }
-                //// khởi tạo kết nối tới DB mysql
-                string connectionString = "Server=localhost;Port=3306;Database=misa.web11.toanlk;Uid=root;Pwd=Lekhanhtoan183461;";
-                var mysqlConnection = new MySqlConnection(connectionString);
-                //// gọi vào DB để chạy stored ở trên
-                var numberOfChanges = mysqlConnection.Execute(storedProcedure, parammeters, commandType: CommandType.StoredProcedure);
+                int numberOfChanges;
+                using (var mysqlConnection = new MySqlConnection(ConnectionString.MYSQL_CONNECTION_STRING))
+                { 
+                    numberOfChanges = mysqlConnection.Execute(storedProcedure, parammeters, commandType: CommandType.StoredProcedure);
+                }
                 if(numberOfChanges > 0)
                 {
                     return recordID;
@@ -69,19 +72,42 @@ namespace MISA.AMIS.DL
         /// </summary>
         /// <param name="record">record is going to be updated into database</param>
         /// <returns>recordID's of changed record</returns>
-        public Guid? UpdateRecord(Guid recordID,T record)
+        public Object? UpdateRecord(Guid recordID, T record)
         {
             try
             {
                 PropertyInfo[] properties = typeof(T).GetProperties();
                 var ObjectName = typeof(T).Name;
                 //chuẩn bị tên store procedure
-                string storedProcedure = $"Proc_{ObjectName}_Update";
+                string storedProcedure = String.Format(StoreProcedureName.PROCEDURE_NAME_UPDATE, ObjectName);
 
                 //chẩn bị tham số đầu vào
                 var parammeters = new DynamicParameters();
+                List<dynamic> errorMessages = new List<dynamic>();
                 foreach (PropertyInfo property in properties)
                 {
+                    // required field validate
+                    RequiredAttribute? requireAttribute = 
+                        (RequiredAttribute?)property.GetCustomAttribute(typeof(RequiredAttribute), false);
+                    if (requireAttribute != null && property.GetValue(record,null) == null)
+                    {
+                        errorMessages.Add(new
+                        {
+                            ErrorMessage = requireAttribute.ErrorMessage,
+                            ErrorField = property.Name
+                        }
+                        );
+                    }
+                    if (requireAttribute != null  && string.IsNullOrEmpty(property.GetValue(record)?.ToString()))
+                    {
+                        errorMessages.Add(new
+                        {
+                            ErrorMessage = requireAttribute.ErrorMessage,
+                            ErrorField = property.Name
+                        }
+                        );
+                    }
+                    //add value into procedure
                     if (property.Name == $"{ObjectName}ID")
                     {
                         parammeters.Add($"@{ObjectName}ID", recordID);
@@ -91,11 +117,17 @@ namespace MISA.AMIS.DL
                         parammeters.Add($"@{property.Name}", property.GetValue(record, null));
                     }
                 }
-                //// khởi tạo kết nối tới DB mysql
-                string connectionString = "Server=localhost;Port=3306;Database=misa.web11.toanlk;Uid=root;Pwd=Lekhanhtoan183461;";
-                var mysqlConnection = new MySqlConnection(connectionString);
+                if(errorMessages.Count > 0)
+                {
+                    return errorMessages;
+                }
+                int numberOfChanges;
+                using (var mysqlConnection = new MySqlConnection(ConnectionString.MYSQL_CONNECTION_STRING))
+                {
+                    numberOfChanges = mysqlConnection.Execute(storedProcedure, parammeters, commandType: CommandType.StoredProcedure);
+                }
                 //// gọi vào DB để chạy stored ở trên
-                var numberOfChanges = mysqlConnection.Execute(storedProcedure, parammeters, commandType: CommandType.StoredProcedure);
+                
                 if (numberOfChanges > 0)
                 {
                     return recordID;
@@ -123,15 +155,17 @@ namespace MISA.AMIS.DL
             try
             {
                 var currentGenericTypeName = typeof(T).Name;
-                string storedProcedure = $"Proc_{currentGenericTypeName}_Delete";
+                string storedProcedure = String.Format(StoreProcedureName.PROCEDURE_NAME_DELETE,currentGenericTypeName);
                 //chẩn bị tham số đầu vào
                 var parammeters = new DynamicParameters();
                 parammeters.Add($"@{currentGenericTypeName}ID", recordId);
-                // khởi tạo kết nối tới DB mysql
-                string connectionString = "Server=localhost;Port=3306;Database=misa.web11.toanlk;Uid=root;Pwd=Lekhanhtoan183461;";
-                var mysqlConnection = new MySqlConnection(connectionString);
+                // khởi tạo kết nối tới DB 
+                int numberOfChanges;
+                using (var mysqlConnection = new MySqlConnection(ConnectionString.MYSQL_CONNECTION_STRING))
+                {
+                    numberOfChanges = mysqlConnection.Execute(storedProcedure, parammeters, commandType: CommandType.StoredProcedure);
+                }
                 // gọi vào DB để chạy stored ở trên
-                var numberOfChanges = mysqlConnection.Execute(storedProcedure, parammeters, commandType: CommandType.StoredProcedure);
                 //xử lý kết quả trả về
                 if (numberOfChanges > 0)
                 {
@@ -147,8 +181,6 @@ namespace MISA.AMIS.DL
             }
             
         }
-
-
         /// <summary>
         /// read all Records from database
         /// Author: toanlk (9/1/2023)
@@ -159,13 +191,15 @@ namespace MISA.AMIS.DL
             try
             {
                 //chuẩn bị tên store procedure
-                string storedProcedure = $"Proc_{typeof(T).Name}_read";
+                string storedProcedure = String.Format(StoreProcedureName.PROCEDURE_NAME_READ, typeof(T).Name);
                 //chẩn bị tham số đầu vào
                 // khởi tạo kết nối tới DB mysql
-                string connectionString = "Server=localhost;Port=3306;Database=misa.web11.toanlk;Uid=root;Pwd=Lekhanhtoan183461;";
-                var mysqlConnection = new MySqlConnection(connectionString);
+                List<T> records;
+                using (var mysqlConnection = new MySqlConnection(ConnectionString.MYSQL_CONNECTION_STRING))
+                {
+                    records = mysqlConnection.Query<T>(storedProcedure, commandType: CommandType.StoredProcedure).ToList();
+                }
                 // gọi vào DB để chạy stored ở trên
-                List<T> records = mysqlConnection.Query<T>(storedProcedure, commandType: CommandType.StoredProcedure).ToList();
                 //xử lý kết quả trả về
                 return records;
             }
@@ -185,7 +219,7 @@ namespace MISA.AMIS.DL
             try
             {
                 //chuẩn bị tên store procedure
-                string storedProcedure = $"Proc_{typeof(T).Name}_filter";
+                string storedProcedure = String.Format(StoreProcedureName.PROCEDURE_NAME_FILTER,typeof(T).Name);
                 //chẩn bị tham số đầu vào
                 var parammeters = new DynamicParameters();
                 parammeters.Add("@keyword", keyword);
@@ -194,14 +228,16 @@ namespace MISA.AMIS.DL
                 parammeters.Add("@offset", offset);
 
                 // khởi tạo kết nối tới DB mysql
-                string connectionString = "Server=localhost;Port=3306;Database=misa.web11.toanlk;Uid=root;Pwd=Lekhanhtoan183461;";
-                var mysqlConnection = new MySqlConnection(connectionString);
-                // gọi vào DB để chạy stored ở trên
-               var MultipleRecordResult = mysqlConnection.QueryMultiple(storedProcedure, parammeters, commandType: CommandType.StoredProcedure);
-                var recordsResult = MultipleRecordResult.Read<T>().ToList();
-                var totalRecord = MultipleRecordResult.Read<int>().Single().ToString();
-                Console.WriteLine(totalRecord);
-                return Tuple.Create(totalRecord, recordsResult);    
+                SqlMapper.GridReader? MultipleRecordResult;
+                using (var mysqlConnection = new MySqlConnection(ConnectionString.MYSQL_CONNECTION_STRING))
+                {
+                    MultipleRecordResult = mysqlConnection.QueryMultiple(storedProcedure, parammeters, commandType: CommandType.StoredProcedure);
+                    // gọi vào DB để chạy stored ở trên
+                    var recordsResult = MultipleRecordResult.Read<T>().ToList();
+                    var totalRecord = MultipleRecordResult.Read<int>().Single().ToString();
+                    return Tuple.Create(totalRecord, recordsResult);
+                }
+                return null;
                 //return ;
                 //xử lý kết quả trả về
                 //return ;
@@ -212,5 +248,40 @@ namespace MISA.AMIS.DL
                 return null;
             }
         }
+        /// <summary>
+        /// get record by its id
+        /// Author: toanlk (9/1/2022)
+        /// </summary>
+        /// <param name="recordID"></param>
+        /// <returns>instance of T object</returns>
+        public T? ReadByID(Guid recordID)
+        {
+            try
+            {
+                //chuẩn bị tên store procedure
+                string storedProcedure = String.Format(StoreProcedureName.PROCEDURE_NAME_READ_BY_ID, typeof(T).Name);
+                //chẩn bị tham số đầu vào
+                var parammeters = new DynamicParameters();
+                parammeters.Add($"@{typeof(T).Name}ID", recordID);
+                // khởi tạo kết nối tới DB mysql
+                T result;
+                using (var mysqlConnection = new MySqlConnection(ConnectionString.MYSQL_CONNECTION_STRING))
+                {
+                    result = mysqlConnection.QuerySingle<T>(storedProcedure, parammeters, commandType: CommandType.StoredProcedure);
+                    // gọi vào DB để chạy stored ở trên
+                }
+                return result;
+                //return ;
+                //xử lý kết quả trả về
+                //return ;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return default;
+            }
+        }
+
+        
     }
 }

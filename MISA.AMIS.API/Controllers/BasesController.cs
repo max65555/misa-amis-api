@@ -35,21 +35,45 @@ namespace MISA.AMIS.API.Controllers
         {
             try
             {
-                Guid? recordID = _baseBL.InsertRecord(record);
-                if (recordID != null)
+                object? result = _baseBL.InsertRecord(record);
+                if (result == null)
                 {
-                    return StatusCode(StatusCodes.Status200OK, recordID);
-                }
-                return StatusCode(StatusCodes.Status400BadRequest,
-                    new ErrorResponse
+                    return StatusCode(StatusCodes.Status400BadRequest, new ErrorResponse
                     {
-
-                        ErrorCode = ErrorCode.InsertFailed,
-                        DevMsg = "Đầu vào không hợp lệ",
-                        UserMsg = "Xin vui lòng nhập lại",
+                        ErrorCode = ErrorCode.Exception,
+                        DevMsg = "Có lỗi ở phía server",
+                        UserMsg = "Đã xảy ra lỗi, Vui lòng thử lại!",
                         MoreInfo = "//",
                         TracedID = HttpContext.TraceIdentifier
                     });
+                }
+                else if (result.GetType() == typeof(System.Collections.Generic.List<object>))
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest, new ErrorResponse
+                    {
+                        ErrorCode = ErrorCode.InvalidInput,
+                        DevMsg = result,
+                        UserMsg = "Xin hãy kiểm tra lại giá trị đầu vào!",
+                        MoreInfo = "//",
+                        TracedID = HttpContext.TraceIdentifier
+                    });
+                }
+                else if (result.GetType() == typeof(System.Guid))
+                {
+                    return StatusCode(StatusCodes.Status200OK, result);
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError,
+                   new ErrorResponse
+                   {
+                       ErrorCode = ErrorCode.Exception,
+                       DevMsg = "Đã xảy ra lỗi ở phía server",
+                       UserMsg = "chỉnh sửa thất bại! Xin vui lòng thử lại",
+                       MoreInfo = "//",
+                       TracedID = HttpContext.TraceIdentifier
+                   });
+                }
             }
             catch (Exception e)
             {
@@ -78,21 +102,47 @@ namespace MISA.AMIS.API.Controllers
         {
             try
             {
-                Guid? UpdateRecordID = _baseBL.UpdateRecord(recordID,record);
-                if (UpdateRecordID == null)
+                object? result = _baseBL.UpdateRecord(recordID,record);
+                if (result == null)
                 {
-                    return StatusCode(StatusCodes.Status200OK, recordID);
-                }
-                return StatusCode(StatusCodes.Status400BadRequest,
-                    new ErrorResponse
+                    return StatusCode(StatusCodes.Status400BadRequest, new ErrorResponse
                     {
 
                         ErrorCode = ErrorCode.UpdateFailed,
-                        DevMsg = "Đầu vào không hợp lệ",
-                        UserMsg = "Xin vui lòng nhập lại",
+                        DevMsg = "không tìm thấy mã nhân viên ",
+                        UserMsg = "Xin hãy kiểm tra lại mã nhân viên!",
                         MoreInfo = "//",
                         TracedID = HttpContext.TraceIdentifier
                     });
+                }
+                else if (result.GetType() == typeof(System.Collections.Generic.List<object>))
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest, new ErrorResponse
+                    {
+
+                        ErrorCode = ErrorCode.InvalidInput,
+                        DevMsg = result,
+                        UserMsg = "Xin hãy kiểm tra lại giá trị đầu vào!",
+                        MoreInfo = "//",
+                        TracedID = HttpContext.TraceIdentifier
+                    });
+                }
+                else if (result.GetType() == typeof(System.Guid))
+                {
+                    return StatusCode(StatusCodes.Status200OK, recordID);
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError,
+                   new ErrorResponse
+                   {
+                       ErrorCode = ErrorCode.Exception,
+                       DevMsg = "Đã xảy ra lỗi ở phía server",
+                       UserMsg = "chỉnh sửa thất bại! Xin vui lòng thử lại",
+                       MoreInfo = "//",
+                       TracedID = HttpContext.TraceIdentifier
+                   });
+                }
             }
             catch (Exception e)
             {
@@ -102,7 +152,7 @@ namespace MISA.AMIS.API.Controllers
                     { 
                         ErrorCode = ErrorCode.Exception,
                         DevMsg = "Đã xảy ra lỗi ở phía server",
-                        UserMsg = "Thê mới thất bại! Xin vui lòng thử lại",
+                        UserMsg = "chỉnh sửa thất bại! Xin vui lòng thử lại",
                         MoreInfo = "//",
                         TracedID = HttpContext.TraceIdentifier
                     });
@@ -152,6 +202,35 @@ namespace MISA.AMIS.API.Controllers
         }
 
         /// <summary>
+        /// read by id
+        /// Author: toanlk (9/1/2023)
+        /// </summary>
+        /// <returns>List of filtered record</returns>
+        [HttpGet]
+        public IActionResult ReadRecords()
+        {
+            var result = _baseBL.ReadRecords() ;
+            //return StatusCode(StatusCodes.Status200OK)
+            //return StatusCode(StatusCodes.Status200OK, new { data = multipleResult.Item1, total = multipleResult.Item2 });
+            if (result == null)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                     new ErrorResponse
+                     {
+
+                         ErrorCode = ErrorCode.Exception,
+                         DevMsg = "Đã xảy ra ngoại lệ",
+                         UserMsg = "Đã xảy ra lỗi ở hệ thống! Vui lòng thử lại",
+                         MoreInfo = "//",
+                         TracedID = HttpContext.TraceIdentifier
+                     }
+                    );
+            }
+            return StatusCode(StatusCodes.Status200OK, result);
+        }
+
+
+        /// <summary>
         /// read with filter
         /// Author: toanlk (9/1/2023)
         /// </summary>
@@ -163,6 +242,35 @@ namespace MISA.AMIS.API.Controllers
             //return StatusCode(StatusCodes.Status200OK)
             return StatusCode(StatusCodes.Status200OK, new { data = multipleResult.Item1 , total = multipleResult.Item2});
         }
+
+        /// <summary>
+        /// read by id
+        /// Author: toanlk (9/1/2023)
+        /// </summary>
+        /// <returns>List of filtered record</returns>
+        [HttpGet("{recordID}")]
+        public IActionResult ReadByID([FromRoute] Guid recordID)
+        {
+            var result = _baseBL.ReadByID(recordID);
+            //return StatusCode(StatusCodes.Status200OK)
+            //return StatusCode(StatusCodes.Status200OK, new { data = multipleResult.Item1, total = multipleResult.Item2 });
+            if(result == null)
+            {
+                return StatusCode(StatusCodes.Status404NotFound,
+                     new ErrorResponse
+                     {
+
+                         ErrorCode = ErrorCode.Exception,
+                         DevMsg = "Không tìm thấy ID nhân viên",
+                         UserMsg = "Không tìm thấy ID Nhân Viên này",
+                         MoreInfo = "//",
+                         TracedID = HttpContext.TraceIdentifier
+                     }
+                    );
+            }
+            return StatusCode(StatusCodes.Status200OK,result);
+        }
+
         #endregion
 
     }

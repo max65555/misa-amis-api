@@ -11,7 +11,7 @@ namespace MISA.AMIS.Common.Entities
         /// <summary>
         /// message for developer
         /// </summary>
-        public string DevMsg { get; set; }
+        public object DevMsg { get; set; }
 
         /// <summary>
         /// message for user
